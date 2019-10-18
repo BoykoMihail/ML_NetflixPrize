@@ -18,7 +18,7 @@ using Eigen::VectorXd;
 class Statistic {
 public:
 
-    static void findeStatistic(const VectorXd &v, double &mean, double &sig) {
+    static void findeStatistic(const VectorXf &v, double &mean, double &sig) {
 
         float summOfElements = 0;
         float summOfSquareElements = 0;
@@ -29,7 +29,7 @@ public:
         sig = sqrt(summOfSquareElements / v.size() - mean * mean);
     }
 
-    static void findeStatistic(const vector<double> &v, double &mean, double &sig) {
+    static void findeStatistic(const vector<float> &v, double &mean, double &sig) {
 
         float summOfElements = 0;
         float summOfSquareElements = 0;

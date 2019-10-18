@@ -9,7 +9,7 @@
 #include <eigen3/Eigen/Core>
 
 using Eigen::MatrixXd;
-using Eigen::VectorXd;
+using Eigen::VectorXf;
 
 #ifndef R2_METRIC_H
 #define	R2_METRIC_H
@@ -17,20 +17,20 @@ using Eigen::VectorXd;
 class R2_metric : public Metric {
 public:
 
-    static double calculateMetric(const std::vector<double> Y_pred, const std::vector<double> Y_test) {
+    static double calculateMetric(const std::vector<float> Y_pred, const std::vector<float> Y_test) {
 
         double sum_Up = 0;
         double sum_down = 0;
         double Y_mean = 0;
         double Y_sig = 0;
 
-        VectorXd Y_test_vector = VectorXd::Map(Y_test.data(), Y_test.size());
-        VectorXd Y_pred_vector = VectorXd::Map(Y_pred.data(), Y_pred.size());
+        VectorXf Y_test_vector = VectorXf::Map(Y_test.data(), Y_test.size());
+        VectorXf Y_pred_vector = VectorXf::Map(Y_pred.data(), Y_pred.size());
 
 
         Statistic::findeStatistic(Y_test_vector, Y_mean, Y_sig);
 
-        VectorXd one(Y_test_vector.size());
+        VectorXf one(Y_test_vector.size());
         one.setConstant(Y_mean);
         
         sum_Up += (Y_test_vector - Y_pred_vector).dot((Y_test_vector - Y_pred_vector)); //( Y_test[i] - Y_pred[i])*( Y_test[i] - Y_pred[i]);

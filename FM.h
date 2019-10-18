@@ -22,32 +22,35 @@ using namespace std;
 class FM {
 public:
     FM();
-    FM(double learning_rate, int numEpoh, int bach_size, int k, int crossValScore, long int maxUsers, long int maxItem);
+    FM(double learning_rate, int numEpoh, long int bach_size, int k, long int maxUsers, long int maxItem);
 
-    void fit(const Eigen::SparseMatrix<double> &Xt, const Eigen::SparseMatrix<double> &Yt);
-    
-    Eigen::SparseMatrix<double> predict(const Eigen::SparseMatrix<double> &X_test);
+    void fit(const Eigen::SparseMatrix<float, ColMajor> &Xt, const VectorXf &Yt);
 
-    std::vector<double> getW() {
-        std::vector<double> w(0);
+    VectorXf predict(const Eigen::SparseMatrix<float, ColMajor> &X_test);
+
+    std::vector<float> getW() {
+        std::vector<float> w(0);
         for (int i = 0; i < W.size(); ++i) {
-            w.push_back(W.insert(i,0));
+            w.push_back(W(i, 0));
         }
         return w;
     }
 
+    ~FM();
+
 private:
-    Eigen::SparseMatrix<double> X, V;
-    Eigen::SparseMatrix<double> Y, W;
-    Eigen::SparseMatrix<double>  ConstantSumm;
-    double w0, learning_rate;
-    int numEpoh, bach_size,  _k, crossValScore;
+    MatrixXf V;
+    VectorXf W;
+    MatrixXf ConstantSumm;
+    float w0, learning_rate;
+    int numEpoh, _k;
+    long int bach_size;
     long int maxUsers, maxItem;
 
 
 
-    Eigen::SparseMatrix<double> predict_value(const Eigen::SparseMatrix<double> &ntheta, const Eigen::SparseMatrix<double> &features);
-    Eigen::SparseMatrix<double> gradientDescent();
+    VectorXf predict_value(float W_0, const VectorXf &Wnew, const MatrixXf &Vnew, const Eigen::SparseMatrix<float, ColMajor> &features);
+    void gradientDescent(const Eigen::SparseMatrix<float, ColMajor> &X, const VectorXf &Y);
 
 
 };

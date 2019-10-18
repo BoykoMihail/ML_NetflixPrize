@@ -12,30 +12,21 @@
 
 using namespace std;
 
-/*
- * 
- */
 
-
-
-void read_training_text(char* data, Eigen::SparseMatrix<double> &X, VectorXd &Y);
+void read_training_text(char* data, Eigen::SparseMatrix<float, ColMajor> &X, VectorXf &Y);
 
 int main(int argc, char** argv) {
 
-//    omp_set_num_threads(4);
-    Eigen::setNbThreads(4);
-    cout<<"Eigen::nbThreads() = "<<Eigen::nbThreads()<<endl;;
-    Eigen::SparseMatrix<double> X;
-    VectorXd Y;
+
+    Eigen::SparseMatrix<float, ColMajor> X;
+    VectorXf Y;
+
     read_training_text("/home/boyko_mihail/NetBeansProjects/course_Ml/Boyko/NetflixPrize_Home_FM/data/dataReiting/training_set", X, Y);
 
-
-
-    FM model(0.02, 10, 100000, 3, 5, 2649420, 17770);
-    CrossValScore crossValModel(model, 5, 2649420, 17770);
+    CrossValScore crossValModel(1.1, 20, 1000000, 4, 5, 2649420, 17770);
 
     crossValModel.fit(X, Y);
-    // f->fit("/home/boyko_mihail/NetBeansProjects/course_Ml/Boyko/NetflixPrize_Home_FM/data/dataReiting/training_set");
+
     return 0;
 }
 
@@ -71,20 +62,21 @@ string getFileName(unsigned int item) {
     return start;
 }
 
-void read_training_text(char* data, Eigen::SparseMatrix<double> &X, VectorXd &Y) {
+void read_training_text(char* data, Eigen::SparseMatrix<float, ColMajor> &X, VectorXf &Y) {
     unsigned int maxUsers = 2649420;
     unsigned int maxFilms = 17770;
     unsigned int index = 0;
-    typedef Eigen::Triplet<double> T;
-    std::vector<double> yVector(0);
+    typedef Eigen::Triplet<float> T;
+    std::vector<float> yVector(0);
     std::vector<T> tripletList;
-//    Eigen::SparseMatrix<double> NewX(110000000, maxFilms + maxUsers);
-//    NewX.reserve(220000000);
-    for (unsigned int i = 1; i < maxFilms/2; ++i) {
+    //    std::vector<T> tripletListY;
+    //    Eigen::SparseMatrix<float> NewX(110000000, maxFilms + maxUsers);
+    //    NewX.reserve(220000000);
+    for (unsigned int i = 1; i < maxFilms ; ++i) {
 
         std::string buf(data);
         string fileName = getFileName(i);
-      //  cout << fileName << endl;
+        cout << fileName << endl;
         buf.append(fileName);
         ifstream file(buf);
         if (file.is_open()) {
@@ -97,11 +89,12 @@ void read_training_text(char* data, Eigen::SparseMatrix<double> &X, VectorXd &Y)
 
                 if (tokens.size() == 3) {
                     unsigned int user = stod(tokens[0]);
-                    unsigned int raiting = stod(tokens[1]);
+                    int raiting = stod(tokens[1]);
                     //                    NewX.insert(index, user) = 1;
                     //                    NewX.insert(index, filmsId + maxUsers) = 1;
                     tripletList.push_back(T(index, user, 1));
                     tripletList.push_back(T(index, filmsId + maxUsers, 1));
+                    //                    tripletListY.push_back(T(index,0,raiting));
                     yVector.push_back(raiting);
                     ++index;
 
@@ -114,17 +107,27 @@ void read_training_text(char* data, Eigen::SparseMatrix<double> &X, VectorXd &Y)
 
     cout << "index = " << index << endl;
     cout << "maxFilms + maxUsers = " << maxFilms + maxUsers << endl;
-    Y = VectorXd::Map(yVector.data(), yVector.size());
+
+    //    Y.resize(0, 0);
+    //    Y.resize(index, 1);
+    //    Y.setFromTriplets(tripletListY.begin(), tripletListY.end());
+
+    Y = VectorXf::Map(yVector.data(), yVector.size());
+
     X.resize(0, 0);
-    X.resize(index , maxFilms + maxUsers );
+
+    X.resize(index, maxFilms + maxUsers);
     X.setFromTriplets(tripletList.begin(), tripletList.end());
+    tripletList.clear();
+
     //    X = NewX;
-//
-//    std::cout <<"max_item = "<< max_item << endl;
-//    std::cout << "max_user = "<< max_user << endl;
-    
+    //
+    //    std::cout <<"max_item = "<< max_item << endl;
+    //    std::cout << "max_user = "<< max_user << endl;
+
     std::cout << X.rows() << endl;
     std::cout << X.nonZeros() << endl;
+
 
 }
 

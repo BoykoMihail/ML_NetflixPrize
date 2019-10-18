@@ -12,7 +12,7 @@
 class RMSE_metric : public Metric {
 public:
 
-    static double calculateMetric(const VectorXd &Y_pred, const VectorXd &Y_test) {
+    static double calculateMetric(const VectorXf &Y_pred, const VectorXf &Y_test) {
 
         double sum = 0;
 
