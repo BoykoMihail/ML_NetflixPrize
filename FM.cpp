@@ -47,45 +47,41 @@ FM::~FM() {
 }
 
 VectorXf FM::predict(const Eigen::SparseMatrix<float, ColMajor> &X_test) {
-    cout << "predict big" << endl;
-    VectorXf W_0;
-    W_0.setConstant(X_test.rows(), this->w0);
 
-    //    Eigen::SparseMatrix<float> firstSlag = X_test*V;
+
     
-    //    Eigen::SparseMatrix<float> firstSlagPowV(firstSlag.rows(), firstSlag.cols());
-    //    firstSlagPowV.reserve(firstSlag.nonZeros());
-    //    for (Index c = 0; c < firstSlag.cols(); ++c) {
-    //        for (Eigen::SparseMatrix<float>::InnerIterator itL(firstSlag, c); itL; ++itL)
-    //            firstSlagPowV.insertBack(itL.row(), itL.col()) += itL.value() * itL.value();
-    //    }
+    cout<<"!!!!!!!!!!!!!!!! "<<endl;
+    
+    MatrixXf first = (X_test * V);
+    
+    
+    MatrixXf firstPow = first.array().pow(2);
+
+    first.resize(0, 0);
+    
+    
+
 
     MatrixXf powV = this->V.array().pow(2);
-    cout << "powV" << endl;
-    //    Eigen::SparseMatrix<float, ColMajor> powV(V.rows(), V.cols());
-    //    powV.reserve(V.nonZeros());
-    //    for (Index c = 0; c < V.cols(); ++c) {
-    //        for (Eigen::SparseMatrix<float, ColMajor>::InnerIterator itL(V, c); itL; ++itL)
-    //            powV.insertBack(itL.row(), itL.col()) += itL.value() * itL.value();
-    //    }
 
-    // Eigen::SparseMatrix<float> secondSlag = ;
+    MatrixXf resultMatrix = (firstPow - X_test * powV);
 
-    //Eigen::SparseMatrix<float> resultMatrix = firstSlagPowV - secondSlag;
-//    MatrixXf first = ();
-//    first = first.array().pow(2);
-//    cout << "first" << endl;
+    powV.resize(0, 0);
 
-    MatrixXf resultMatrix = (X_test * V - X_test * powV);
-    cout << "resultMatrix" << endl;
     MatrixXf resultVector = resultMatrix.col(0) + resultMatrix.col(1);
-
-    cout << "resultVector" << endl;
     for (int k = 2; k < _k; ++k) {
         resultVector = resultVector + resultMatrix.col(k);
     }
     
+     cout<<"!!!!!!!!!!!!!!!! "<<first.rows()*first.cols()<<endl;
+
+    resultMatrix.resize(0, 0);
+
     resultVector = resultVector * 0.5;
+
+    VectorXf W_0;
+    W_0.setConstant(X_test.rows(), this->w0);
+    
 
     return W_0 + X_test * W + resultVector;
 }
@@ -94,35 +90,23 @@ void FM::fit(const Eigen::SparseMatrix<float, ColMajor> &Xt, const VectorXf &Yt)
 
     srand(static_cast<unsigned> (time(0)));
 
-    this->W.setZero(Xt.cols());
-    //    this->W.resize(0, 0);
-    //    this->W.resize(Xt.cols(), 1);
-    //    this->W.reserve(Xt.cols());
+    this->W.setZero(Xt.cols(),1);
 
+    //    for (long int i = 0; i < Xt.cols(); ++i) {
+    //        int sign = rand() % 2 == 1 ? 1 : -1;
+    //        float abs = static_cast<float> (rand()) / static_cast<float> (RAND_MAX);
+    //        W(i) = (sign * abs);
+    //    }
 
-
-
-    for (long int i = 0; i < Xt.cols(); ++i) {
-        int sign = rand() % 2 == 1 ? 1 : -1;
-        float abs = static_cast<float> (rand()) / static_cast<float> (RAND_MAX);
-        W(i) = (sign * abs);
-    }
-
-
-    //    this->V.resize(0, 0);
-    //    this->V.resize(Xt.cols() , _k);
-    //    this->V.reserve(Xt.cols() * _k);
-
-    //this->V.clear();
     this->V.setZero(Xt.cols(), _k);
-    //
-    for (long int i = 0; i < Xt.cols(); ++i) {
-        for (long int j = 0; j < _k; ++j) {
-            int sign = rand() % 2 == 1 ? 1 : -1;
-            float abs = static_cast<float> (rand()) / static_cast<float> (RAND_MAX);
-            V(i, j) = (sign * abs);
-        }
-    }
+
+    //    for (long int i = 0; i < Xt.cols(); ++i) {
+    //        for (long int j = 0; j < _k; ++j) {
+    //            int sign = rand() % 2 == 1 ? 1 : -1;
+    //            float abs = static_cast<float> (rand()) / static_cast<float> (RAND_MAX);
+    //            V(i, j) = (sign * abs);
+    //        }
+    //    }
 
     this->w0 = static_cast<float> (rand()) / static_cast<float> (RAND_MAX);
 
@@ -149,7 +133,8 @@ void FM::gradientDescent(const Eigen::SparseMatrix<float, ColMajor> &X, const Ve
 
         std::shuffle(indexes.begin(), indexes.end(), g);
 
-        VectorXf newW = this->W;
+
+        MatrixXf newW = this->W;
         MatrixXf newV = this->V;
         float newW0 = this->w0;
 
@@ -167,11 +152,14 @@ void FM::gradientDescent(const Eigen::SparseMatrix<float, ColMajor> &X, const Ve
 
             VectorXf current_predict_value = predict_value(newW0, newW, newV, bachX);
 
+    
             VectorXf diff = (bachY - current_predict_value); // / (((bachY - current_predict_value)*(bachY - current_predict_value)).sqrt());
 
             diff = diff* learning_rate;
+
             newW = (newW + (((bachX.transpose() * diff) / bachY.size())));
             W = newW;
+
             VectorXf ones;
             ones.setOnes(bachY.size());
             newW0 + ((diff.transpose() * ones) / bachY.size())(0, 0);
@@ -181,17 +169,17 @@ void FM::gradientDescent(const Eigen::SparseMatrix<float, ColMajor> &X, const Ve
 
             MatrixXf M;
             M.setZero(V.rows(), V.cols());
-
             for (Index c = 0; c < bachX.cols(); ++c) {
                 for (Eigen::SparseMatrix<float>::InnerIterator itL(bachX, c); itL; ++itL)
                     for (int rr = 0; rr < V.cols(); ++rr) {
-                        M(c, rr) += V(c, rr) * itL.value() * itL.value();
+                        M(c, rr) += V.coeff(c, rr) * itL.value() * itL.value();
                     }
             }
 
-            newV = (newV + (((bachX.transpose() * ConstantSumm - M)) / bachY.size()));
-            M.resize(0, 0);
-            V = newV;
+            MatrixXf temp = (newV + (((bachX.transpose() * ConstantSumm - M)) / bachY.size()));
+
+            V = temp;
+
             srand(time(NULL));
             int indexCurrent = 0;
             if (lastDiff.size() == diff.size()) {
@@ -211,62 +199,44 @@ void FM::gradientDescent(const Eigen::SparseMatrix<float, ColMajor> &X, const Ve
             }
         }
         auto Y_pred = predict(X);
-        cout << "predict return" << endl;
         float result_RMSE = RMSE_metric::calculateMetric(Y_pred, Y);
         cout << "learning_rate = " << learning_rate << endl;
+        cout << W.nonZeros() << endl;
+        cout << V.nonZeros() << endl;
         cout << "result RMSE trening epoch #" << k << " = " << result_RMSE << endl;
         ++k;
     }
 }
 
-VectorXf FM::predict_value(float W_0, const VectorXf &Wnew, const MatrixXf &Vnew, const Eigen::SparseMatrix<float, ColMajor> &features) {
+VectorXf FM::predict_value(float W_0, const MatrixXf &Wnew, const MatrixXf &Vnew, const Eigen::SparseMatrix<float, ColMajor> &features) {
 
 
     ConstantSumm = features*Vnew;
+    MatrixXf first = (features * Vnew);
+    MatrixXf firstPow = first.array().pow(2);
 
-    VectorXf W_0vector;
-    W_0vector.setConstant(features.rows(), this->w0);
+    first.resize(0, 0);
 
 
-    //    Eigen::SparseMatrix<float> firstSlag = X_test*V;
-    //
-    //    Eigen::SparseMatrix<float> firstSlagPowV(firstSlag.rows(), firstSlag.cols());
-    //    firstSlagPowV.reserve(firstSlag.nonZeros());
-    //    for (Index c = 0; c < firstSlag.cols(); ++c) {
-    //        for (Eigen::SparseMatrix<float>::InnerIterator itL(firstSlag, c); itL; ++itL)
-    //            firstSlagPowV.insertBack(itL.row(), itL.col()) += itL.value() * itL.value();
-    //    }
+    MatrixXf powV = Vnew.array().pow(2);
 
-    MatrixXf powV = this->V.array().pow(2);
+    MatrixXf resultMatrix = (firstPow - features * powV);
 
-    //    Eigen::SparseMatrix<float, ColMajor> powV(V.rows(), V.cols());
-    //    powV.reserve(V.nonZeros());
-    //    for (Index c = 0; c < V.cols(); ++c) {
-    //        for (Eigen::SparseMatrix<float, ColMajor>::InnerIterator itL(V, c); itL; ++itL)
-    //            powV.insertBack(itL.row(), itL.col()) += itL.value() * itL.value();
-    //    }
+    powV.resize(0, 0);
 
-    // Eigen::SparseMatrix<float> secondSlag = ;
-
-    //Eigen::SparseMatrix<float> resultMatrix = firstSlagPowV - secondSlag;
-    MatrixXf first = (features * V);
-    first = first.array().pow(2);
-
-    //    for (Index c = 0; c < first.cols(); ++c) {
-    //        for (Eigen::SparseMatrix<float, ColMajor>::InnerIterator itL(first, c); itL; ++itL)
-    //            first.insertBack(itL.row(), itL.col()) += itL.value() * itL.value();
-    //    }
-
-    MatrixXf resultMatrix = (first - features * powV);
     MatrixXf resultVector = resultMatrix.col(0) + resultMatrix.col(1);
     for (int k = 2; k < _k; ++k) {
         resultVector = resultVector + resultMatrix.col(k);
     }
 
+    resultMatrix.resize(0, 0);
+
     resultVector = resultVector * 0.5;
 
-
-    return W_0vector + features * W + resultVector;
+    VectorXf W_0vector;
+    W_0vector.setConstant(features.rows(), W_0);
+    W_0vector + features * Wnew ;
+    return W_0vector + features * Wnew + resultVector;
 }
 
 

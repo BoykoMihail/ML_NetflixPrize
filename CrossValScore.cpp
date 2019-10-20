@@ -30,7 +30,7 @@ void CrossValScore::fit(Eigen::SparseMatrix<float, ColMajor> &X, VectorXf &Y) {
     int crossValCount = X.rows() / countOfCrossVal;
 
     std::vector<float> RMSE_results(0);
-  //  std::vector<std::vector<float>> all_W(0);
+    std::vector<std::vector<float>> all_W(0);
 
     Eigen::SparseMatrix<float, ColMajor> X_train;
     Eigen::SparseMatrix<float, ColMajor> X_test;
@@ -114,8 +114,8 @@ void CrossValScore::fit(Eigen::SparseMatrix<float, ColMajor> &X, VectorXf &Y) {
 
         RMSE_results.push_back(result_RMSE_test);
 //        cout<<"!!!!!!!!!!!!!!!!!!"<<endl;
-        //all_W.push_back(model.getW());
-       // model.~FM();
+        all_W.push_back(model.getW());
+       
     }
     clock_t end = clock();
 
@@ -135,21 +135,21 @@ void CrossValScore::fit(Eigen::SparseMatrix<float, ColMajor> &X, VectorXf &Y) {
 
 
     std::ofstream myfile;
-    myfile.open("/home/boyko_mihail/NetBeansProjects/course_Ml/Boyko/NetflixPrize_Home_FM//Result_table.csv");
+    myfile.open("/home/boyko_mihail/NetBeansProjects/course_Ml/Boyko/NetflixPrize_Home_FM//Result_table2.csv");
     myfile << ",1,2,3,4,5,E,SD,\n";
     myfile << "RMSE," << (RMSE_results[0]) << "," << (RMSE_results[1]) << "," << (RMSE_results[2]) << "," << (RMSE_results[3]) << "," << (RMSE_results[4]) << "," << RMSE_M << "," << RMSE_sig << ",\n";
 
-    //    for (int i = 0; i < all_W[0].size(); i++) {
-    //        float W_i_M = 0;
-    //        float W_i_Sig = 0;
-    //        for (int k = 0; k < all_W.size(); ++k) {
-    //            W_i_M += all_W[k][i];
-    //            W_i_Sig += all_W[k][i] * all_W[k][i];
-    //        }
-    //        W_i_M = W_i_M / all_W.size();
-    //        W_i_Sig = sqrt(W_i_Sig / all_W.size() - W_i_M * W_i_M);
-    //        myfile << "X["<<i<<"}" << "," << all_W[0][i] << "," << all_W[1][i] << "," << all_W[2][i] << "," << all_W[3][i] << "," << all_W[4][i] << "," << W_i_M << "," << W_i_Sig << ",\n";
-    //    }
+        for (int i = 0; i < all_W[0].size(); i++) {
+            float W_i_M = 0;
+            float W_i_Sig = 0;
+            for (int k = 0; k < all_W.size(); ++k) {
+                W_i_M += all_W[k][i];
+                W_i_Sig += all_W[k][i] * all_W[k][i];
+            }
+            W_i_M = W_i_M / all_W.size();
+            W_i_Sig = sqrt(W_i_Sig / all_W.size() - W_i_M * W_i_M);
+            myfile << "X["<<i<<"}" << "," << all_W[0][i] << "," << all_W[1][i] << "," << all_W[2][i] << "," << all_W[3][i] << "," << all_W[4][i] << "," << W_i_M << "," << W_i_Sig << ",\n";
+        }
 
     myfile.close();
 }

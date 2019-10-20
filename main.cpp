@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
 
     read_training_text("/home/boyko_mihail/NetBeansProjects/course_Ml/Boyko/NetflixPrize_Home_FM/data/dataReiting/training_set", X, Y);
 
-    CrossValScore crossValModel(1.1, 20, 1000000, 4, 5, 2649420, 17770);
+    CrossValScore crossValModel(1.6, 30, 25000000, 5, 5, 2649420, 17770);
 
     crossValModel.fit(X, Y);
 
@@ -71,8 +71,8 @@ void read_training_text(char* data, Eigen::SparseMatrix<float, ColMajor> &X, Vec
     std::vector<T> tripletList;
     //    std::vector<T> tripletListY;
     //    Eigen::SparseMatrix<float> NewX(110000000, maxFilms + maxUsers);
-    //    NewX.reserve(220000000);
-    for (unsigned int i = 1; i < maxFilms ; ++i) {
+    //    NewX.reserve(220000000);-*
+    for (unsigned int i = 1; i < maxFilms; ++i) {
 
         std::string buf(data);
         string fileName = getFileName(i);

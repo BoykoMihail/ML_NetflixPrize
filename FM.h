@@ -31,7 +31,7 @@ public:
     std::vector<float> getW() {
         std::vector<float> w(0);
         for (int i = 0; i < W.size(); ++i) {
-            w.push_back(W(i, 0));
+            w.push_back(W.coeff(i, 0));
         }
         return w;
     }
@@ -39,8 +39,7 @@ public:
     ~FM();
 
 private:
-    MatrixXf V;
-    VectorXf W;
+    MatrixXf V, W;
     MatrixXf ConstantSumm;
     float w0, learning_rate;
     int numEpoh, _k;
@@ -49,7 +48,7 @@ private:
 
 
 
-    VectorXf predict_value(float W_0, const VectorXf &Wnew, const MatrixXf &Vnew, const Eigen::SparseMatrix<float, ColMajor> &features);
+    VectorXf predict_value(float W_0, const MatrixXf &Wnew, const MatrixXf &Vnew, const Eigen::SparseMatrix<float, ColMajor> &features);
     void gradientDescent(const Eigen::SparseMatrix<float, ColMajor> &X, const VectorXf &Y);
 
 
