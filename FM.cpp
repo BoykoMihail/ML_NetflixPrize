@@ -46,20 +46,16 @@ FM::FM(double learning_rate, int numEpoh, long int bach_size, int k, long int ma
 FM::~FM() {
 }
 
-VectorXf FM::predict(const Eigen::SparseMatrix<float, ColMajor> &X_test) {
+VectorXf FM::predict(const Eigen::SparseMatrix<float, RowMajor> &X_test) {
 
-
-    
-    cout<<"!!!!!!!!!!!!!!!! "<<endl;
-    
     MatrixXf first = (X_test * V);
-    
-    
+
+
     MatrixXf firstPow = first.array().pow(2);
 
     first.resize(0, 0);
-    
-    
+
+
 
 
     MatrixXf powV = this->V.array().pow(2);
@@ -72,8 +68,6 @@ VectorXf FM::predict(const Eigen::SparseMatrix<float, ColMajor> &X_test) {
     for (int k = 2; k < _k; ++k) {
         resultVector = resultVector + resultMatrix.col(k);
     }
-    
-     cout<<"!!!!!!!!!!!!!!!! "<<first.rows()*first.cols()<<endl;
 
     resultMatrix.resize(0, 0);
 
@@ -81,16 +75,16 @@ VectorXf FM::predict(const Eigen::SparseMatrix<float, ColMajor> &X_test) {
 
     VectorXf W_0;
     W_0.setConstant(X_test.rows(), this->w0);
-    
+
 
     return W_0 + X_test * W + resultVector;
 }
 
-void FM::fit(const Eigen::SparseMatrix<float, ColMajor> &Xt, const VectorXf &Yt) {
+void FM::fit(const Eigen::SparseMatrix<float, RowMajor> &Xt, const VectorXf &Yt) {
 
     srand(static_cast<unsigned> (time(0)));
 
-    this->W.setZero(Xt.cols(),1);
+    this->W.setZero(Xt.cols(), 1);
 
     //    for (long int i = 0; i < Xt.cols(); ++i) {
     //        int sign = rand() % 2 == 1 ? 1 : -1;
@@ -114,7 +108,7 @@ void FM::fit(const Eigen::SparseMatrix<float, ColMajor> &Xt, const VectorXf &Yt)
     this->gradientDescent(Xt, Yt);
 }
 
-void FM::gradientDescent(const Eigen::SparseMatrix<float, ColMajor> &X, const VectorXf &Y) {
+void FM::gradientDescent(const Eigen::SparseMatrix<float, RowMajor> &X, const VectorXf &Y) {
 
     int k = 0;
 
@@ -128,31 +122,56 @@ void FM::gradientDescent(const Eigen::SparseMatrix<float, ColMajor> &X, const Ve
 
     while (k < numEpoh) {
 
+        clock_t startEp = clock();
+
         std::random_device rd;
         std::mt19937 g(rd());
 
         std::shuffle(indexes.begin(), indexes.end(), g);
-
+        //
+        //        clock_t startPer = clock();
+        //        Eigen::PermutationMatrix<Dynamic, Dynamic, int> perm(X.rows());
+        //        perm.setIdentity();
+        //        std::random_shuffle(perm.indices().data(), perm.indices().data() + perm.indices().size());     
+        //        Eigen::SparseMatrix<float, RowMajor> Xn;
+        //        auto X_perm = (perm*X);
+        //        
 
         MatrixXf newW = this->W;
         MatrixXf newV = this->V;
         float newW0 = this->w0;
 
-        Eigen::SparseMatrix<float, ColMajor> bachX;
+        Eigen::SparseMatrix<float, RowMajor> bachX;
         VectorXf bachY;
-        for (int i = 0; i < X.rows(); i += this->bach_size) {
+        for (int i = 0; i < indexes.size(); i += this->bach_size) {
 
-            if (indexes[i] + bach_size < X.rows()) {
-                bachX = X.block(indexes[i], 0, bach_size, X.cols());
-                bachY = Y.block(indexes[i], 0, bach_size, 1);
+            if (i + bach_size < indexes.size()) {
+
+                bachX.resize(bach_size, X.cols());
+                bachX.reserve(bach_size * 2);
+                bachY.resize(bach_size, 1);
+
+                for (int k = i; k < i + bach_size; ++k) {
+                    for (Eigen::SparseMatrix<float, Eigen::RowMajor>::InnerIterator itL(X, indexes[k]); itL; ++itL) {
+                        bachX.insert(k - i, itL.col()) = itL.value();
+                    }
+
+                    bachY(k - i) = Y(indexes[k]);
+                }
             } else {
-                bachX = X.block(indexes[i], 0, X.rows() - indexes[i], X.cols());
-                bachY = Y.block(indexes[i], 0, X.rows() - indexes[i], 1);
+                bachX.resize(indexes.size() - i, X.cols());
+                bachX.reserve((indexes.size() - i)*2);
+                bachY.resize(indexes.size() - i, 1);
+                for (int k = i; k < indexes.size(); ++k) {
+                    for (Eigen::SparseMatrix<float, Eigen::RowMajor>::InnerIterator itL(X, indexes[k]); itL; ++itL)
+                        bachX.insert(k - i, itL.col()) = itL.value();
+                    bachY(k - i) = Y(indexes[k]);
+                }
             }
 
             VectorXf current_predict_value = predict_value(newW0, newW, newV, bachX);
 
-    
+
             VectorXf diff = (bachY - current_predict_value); // / (((bachY - current_predict_value)*(bachY - current_predict_value)).sqrt());
 
             diff = diff* learning_rate;
@@ -166,13 +185,12 @@ void FM::gradientDescent(const Eigen::SparseMatrix<float, ColMajor> &X, const Ve
             newW0 = (newW0 + ((diff.transpose() * ones) / bachY.size())(0, 0));
             w0 = newW0;
 
-
             MatrixXf M;
             M.setZero(V.rows(), V.cols());
-            for (Index c = 0; c < bachX.cols(); ++c) {
-                for (Eigen::SparseMatrix<float>::InnerIterator itL(bachX, c); itL; ++itL)
+            for (Index r = 0; r < bachX.rows(); ++r) {
+                for (Eigen::SparseMatrix<float, Eigen::RowMajor>::InnerIterator itL(bachX, r); itL; ++itL)
                     for (int rr = 0; rr < V.cols(); ++rr) {
-                        M(c, rr) += V.coeff(c, rr) * itL.value() * itL.value();
+                        M(itL.col(), rr) += V.coeff(itL.col(), rr) * V.coeff(itL.col(), rr) * itL.value() * itL.value();
                     }
             }
 
@@ -188,9 +206,9 @@ void FM::gradientDescent(const Eigen::SparseMatrix<float, ColMajor> &X, const Ve
                 indexCurrent = rand() % lastDiff.size();
             }
 
-            if (learning_rate > 0.00000000000000000015) {
+            if (learning_rate > 0.00000000000015) {
                 if ((lastDiff[indexCurrent] * diff[indexCurrent]) <= 0) {
-                    learning_rate *= 0.999;
+                    learning_rate *= 0.99;
                     lastDiff = diff;
                 } else {
                     learning_rate *= 1.001;
@@ -198,17 +216,20 @@ void FM::gradientDescent(const Eigen::SparseMatrix<float, ColMajor> &X, const Ve
                 }
             }
         }
+        clock_t endEp = clock();
+
+        double secondsEp = (double) (endEp - startEp) / CLOCKS_PER_SEC;
+        cout << " time epoche = " << secondsEp << " seconds" << endl << endl;
+
         auto Y_pred = predict(X);
         float result_RMSE = RMSE_metric::calculateMetric(Y_pred, Y);
         cout << "learning_rate = " << learning_rate << endl;
-        cout << W.nonZeros() << endl;
-        cout << V.nonZeros() << endl;
         cout << "result RMSE trening epoch #" << k << " = " << result_RMSE << endl;
         ++k;
     }
 }
 
-VectorXf FM::predict_value(float W_0, const MatrixXf &Wnew, const MatrixXf &Vnew, const Eigen::SparseMatrix<float, ColMajor> &features) {
+VectorXf FM::predict_value(float W_0, const MatrixXf &Wnew, const MatrixXf &Vnew, const Eigen::SparseMatrix<float, RowMajor> &features) {
 
 
     ConstantSumm = features*Vnew;
@@ -235,7 +256,7 @@ VectorXf FM::predict_value(float W_0, const MatrixXf &Wnew, const MatrixXf &Vnew
 
     VectorXf W_0vector;
     W_0vector.setConstant(features.rows(), W_0);
-    W_0vector + features * Wnew ;
+    W_0vector + features * Wnew;
     return W_0vector + features * Wnew + resultVector;
 }
 

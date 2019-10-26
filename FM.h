@@ -13,7 +13,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-//#include <eigen/Sparse>
 #include <eigen3/Eigen/Sparse>
 
 using namespace Eigen;
@@ -24,9 +23,9 @@ public:
     FM();
     FM(double learning_rate, int numEpoh, long int bach_size, int k, long int maxUsers, long int maxItem);
 
-    void fit(const Eigen::SparseMatrix<float, ColMajor> &Xt, const VectorXf &Yt);
+    void fit(const Eigen::SparseMatrix<float, RowMajor> &Xt, const VectorXf &Yt);
 
-    VectorXf predict(const Eigen::SparseMatrix<float, ColMajor> &X_test);
+    VectorXf predict(const Eigen::SparseMatrix<float, RowMajor> &X_test);
 
     std::vector<float> getW() {
         std::vector<float> w(0);
@@ -48,8 +47,8 @@ private:
 
 
 
-    VectorXf predict_value(float W_0, const MatrixXf &Wnew, const MatrixXf &Vnew, const Eigen::SparseMatrix<float, ColMajor> &features);
-    void gradientDescent(const Eigen::SparseMatrix<float, ColMajor> &X, const VectorXf &Y);
+    VectorXf predict_value(float W_0, const MatrixXf &Wnew, const MatrixXf &Vnew, const Eigen::SparseMatrix<float, RowMajor> &features);
+    void gradientDescent(const Eigen::SparseMatrix<float, RowMajor> &X, const VectorXf &Y);
 
 
 };

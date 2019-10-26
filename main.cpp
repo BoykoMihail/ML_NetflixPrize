@@ -13,17 +13,17 @@
 using namespace std;
 
 
-void read_training_text(char* data, Eigen::SparseMatrix<float, ColMajor> &X, VectorXf &Y);
+void read_training_text(char* data, Eigen::SparseMatrix<float, RowMajor> &X, VectorXf &Y);
 
 int main(int argc, char** argv) {
 
 
-    Eigen::SparseMatrix<float, ColMajor> X;
+    Eigen::SparseMatrix<float, RowMajor> X;
     VectorXf Y;
 
     read_training_text("/home/boyko_mihail/NetBeansProjects/course_Ml/Boyko/NetflixPrize_Home_FM/data/dataReiting/training_set", X, Y);
 
-    CrossValScore crossValModel(1.6, 30, 25000000, 5, 5, 2649420, 17770);
+    CrossValScore crossValModel(2.6, 37, 2000000, 5, 5, 2649420, 17770);
 
     crossValModel.fit(X, Y);
 
@@ -62,16 +62,13 @@ string getFileName(unsigned int item) {
     return start;
 }
 
-void read_training_text(char* data, Eigen::SparseMatrix<float, ColMajor> &X, VectorXf &Y) {
+void read_training_text(char* data, Eigen::SparseMatrix<float, RowMajor> &X, VectorXf &Y) {
     unsigned int maxUsers = 2649420;
     unsigned int maxFilms = 17770;
     unsigned int index = 0;
     typedef Eigen::Triplet<float> T;
     std::vector<float> yVector(0);
     std::vector<T> tripletList;
-    //    std::vector<T> tripletListY;
-    //    Eigen::SparseMatrix<float> NewX(110000000, maxFilms + maxUsers);
-    //    NewX.reserve(220000000);-*
     for (unsigned int i = 1; i < maxFilms; ++i) {
 
         std::string buf(data);
@@ -90,11 +87,8 @@ void read_training_text(char* data, Eigen::SparseMatrix<float, ColMajor> &X, Vec
                 if (tokens.size() == 3) {
                     unsigned int user = stod(tokens[0]);
                     int raiting = stod(tokens[1]);
-                    //                    NewX.insert(index, user) = 1;
-                    //                    NewX.insert(index, filmsId + maxUsers) = 1;
                     tripletList.push_back(T(index, user, 1));
                     tripletList.push_back(T(index, filmsId + maxUsers, 1));
-                    //                    tripletListY.push_back(T(index,0,raiting));
                     yVector.push_back(raiting);
                     ++index;
 
@@ -108,10 +102,6 @@ void read_training_text(char* data, Eigen::SparseMatrix<float, ColMajor> &X, Vec
     cout << "index = " << index << endl;
     cout << "maxFilms + maxUsers = " << maxFilms + maxUsers << endl;
 
-    //    Y.resize(0, 0);
-    //    Y.resize(index, 1);
-    //    Y.setFromTriplets(tripletListY.begin(), tripletListY.end());
-
     Y = VectorXf::Map(yVector.data(), yVector.size());
 
     X.resize(0, 0);
@@ -119,12 +109,6 @@ void read_training_text(char* data, Eigen::SparseMatrix<float, ColMajor> &X, Vec
     X.resize(index, maxFilms + maxUsers);
     X.setFromTriplets(tripletList.begin(), tripletList.end());
     tripletList.clear();
-
-    //    X = NewX;
-    //
-    //    std::cout <<"max_item = "<< max_item << endl;
-    //    std::cout << "max_user = "<< max_user << endl;
-
     std::cout << X.rows() << endl;
     std::cout << X.nonZeros() << endl;
 

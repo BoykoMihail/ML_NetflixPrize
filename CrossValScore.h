@@ -14,19 +14,19 @@ class CrossValScore {
 public:
     CrossValScore(float learning_rate, int numEpoh, long int bach_size, int k, int countOfCrossVal, long int maxUsers, long int maxItem);
 
-    
-    void fit(Eigen::SparseMatrix<float, ColMajor> &X, VectorXf &Y);
-    
+
+    void fit(Eigen::SparseMatrix<float, RowMajor> &X, VectorXf &Y);
+
     float getMeanRMSE();
 private:
-    
+
     float meanRMSE;
     long int maxUsers, maxItem;
     int countOfCrossVal;
     float w0, learning_rate;
-    int numEpoh, bach_size,  _k;
-    
-    
+    int numEpoh, bach_size, _k;
+
+
 
 };
 
